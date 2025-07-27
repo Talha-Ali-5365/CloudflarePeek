@@ -1,6 +1,19 @@
 # CloudflarePeek 🔍
 ### Made by Talha Ali
 
+## ⚠️ Important Disclaimer
+
+**This tool is NOT 100% reliable and is NOT recommended for VPS or automated server deployments.** 
+
+CloudflarePeek bypasses basic Cloudflare crawler detection, but it cannot solve CAPTCHAs or complex bot challenges. For the tool to work effectively:
+
+- **Use it from your personal computer** where you regularly browse the web
+- **Visit Cloudflare-protected sites manually** in your browser first (like SourceForge, etc.)
+- This helps establish your IP as a "real user" in Cloudflare's system
+- The tool works by mimicking browser behavior, not by solving security challenges
+
+**Use Case:** This tool excels at bypassing Cloudflare's basic anti-crawler measures when simple tools like LangChain WebLoader fail, but your IP must already be trusted by Cloudflare through normal browsing activity.
+
 A powerful Python utility that can scrape **any website**—even those protected by Cloudflare. When traditional scraping fails, CloudflarePeek automatically falls back to taking a full-page screenshot and extracting text using Google's Gemini OCR.
 
 ## ✨ Features
