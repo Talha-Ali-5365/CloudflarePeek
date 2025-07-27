@@ -30,7 +30,7 @@ pip install -e .
 
 1. **Install Playwright browsers** (required for screenshot functionality):
 ```bash
-playwright install chromium
+playwright install
 ```
 
 2. **Get a Gemini API key** (required for OCR):
