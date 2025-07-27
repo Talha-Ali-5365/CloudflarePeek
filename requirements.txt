@@ -4,3 +4,5 @@ langchain-community>=0.0.20
 playwright>=1.40.0
 google-generativeai>=0.3.0
 Pillow>=8.0.0
+typer[all]>=0.9.0
+rich>=13.0.0

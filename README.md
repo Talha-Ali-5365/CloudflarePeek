@@ -69,6 +69,35 @@ text = peek("https://example.com", force_ocr=True)
 text = peek("https://example.com", api_key="your-gemini-key", timeout=300000)
 ```
 
+### CLI Usage
+
+CloudflarePeek also comes with a powerful command-line interface.
+
+**Scrape a website:**
+```bash
+cloudflare-peek scrape https://example.com
+```
+
+**Check if a site is behind Cloudflare:**
+```bash
+cloudflare-peek check-cloudflare https://example.com
+```
+
+**Save content to a file:**
+```bash
+cloudflare-peek scrape https://example.com -o content.txt
+```
+
+**Advanced options:**
+```bash
+# Force OCR, run in non-headless mode, and set a 60s timeout
+cloudflare-peek scrape https://example.com --force-ocr --no-headless --timeout 60
+
+# See all commands and options
+cloudflare-peek --help
+cloudflare-peek scrape --help
+```
+
 ### Environment Variables
 
 ```bash

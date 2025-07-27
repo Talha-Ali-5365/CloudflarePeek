@@ -54,14 +54,22 @@ def _run_async(coro):
         return asyncio.run(coro)
 
 
-async def _screenshot_ocr(url: str, api_key: Optional[str] = None, timeout: int = 120000) -> str:
+async def _screenshot_ocr(
+    url: str,
+    api_key: Optional[str] = None,
+    timeout: int = 120000,
+    headless: bool = True,
+    scroll_pause: float = 1.0,
+) -> str:
     """
     Take a full-page screenshot and extract text using Gemini OCR.
     
     Args:
         url: The URL to scrape
-        api_key: Gemini API key (if not provided, will use GEMINI_API_KEY env var)
-        timeout: Page load timeout in milliseconds (default: 120000 = 2 minutes)
+        api_key: Gemini API key
+        timeout: Page load timeout in milliseconds
+        headless: Run browser in headless mode
+        scroll_pause: Time to wait between scrolls
         
     Returns:
         Extracted text from the screenshot
@@ -78,19 +86,13 @@ async def _screenshot_ocr(url: str, api_key: Optional[str] = None, timeout: int 
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
-    logger.info("📸 Taking screenshot and extracting content...")
+    logger.info("📸 Taking screenshot and extracting content (headless: %s)...", headless)
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
-        )
+        browser = await p.chromium.launch(headless=headless)
         try:
-            # Use proper Chromium User-Agent
-            ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                  "AppleWebKit/537.36 (KHTML, like Gecko) "
-                  "Chrome/124.0.0.0 Safari/537.36")
-            
-            page = await browser.new_page(user_agent=ua)
+            page = await browser.new_page(
+                user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
             
             # Set default timeout for ALL page operations
             page.set_default_timeout(timeout)
@@ -100,6 +102,7 @@ async def _screenshot_ocr(url: str, api_key: Optional[str] = None, timeout: int 
 
             # Scroll to bottom to load all content
             prev_height = 0
+            scroll_attempts = 0
             while True:
                 curr_height = await page.evaluate("document.body.scrollHeight")
                 if curr_height == prev_height:
@@ -107,7 +110,8 @@ async def _screenshot_ocr(url: str, api_key: Optional[str] = None, timeout: int 
                     
                 prev_height = curr_height
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await asyncio.sleep(1)
+                await asyncio.sleep(scroll_pause)
+                scroll_attempts += 1
 
             # Take full-page screenshot
             png_data = await page.screenshot(full_page=True)
@@ -141,18 +145,24 @@ def _fast_load(url: str) -> str:
     return content
 
 
-def peek(url: str, api_key: Optional[str] = None, force_ocr: bool = False, timeout: int = 120000) -> str:
+def peek(
+    url: str,
+    api_key: Optional[str] = None,
+    force_ocr: bool = False,
+    timeout: int = 120000,
+    headless: bool = True,
+    scroll_pause: float = 1.0,
+) -> str:
     """
     Load webpage content with automatic Cloudflare detection and fallback.
     
-    This function first tries fast scraping. If the site is behind Cloudflare 
-    or if fast scraping fails, it automatically falls back to OCR extraction.
-    
     Args:
         url: The URL to scrape
-        api_key: Gemini API key for OCR (optional, uses GEMINI_API_KEY env var if not provided)
+        api_key: Gemini API key for OCR
         force_ocr: If True, skip fast scraping and go directly to OCR method
-        timeout: Page load timeout in milliseconds for OCR method (default: 120000 = 2 minutes)
+        timeout: Page load timeout in milliseconds for OCR method
+        headless: Run browser in headless mode for OCR method
+        scroll_pause: Time in seconds to wait between scrolls for OCR method
         
     Returns:
         Extracted text content from the webpage
@@ -165,14 +175,18 @@ def peek(url: str, api_key: Optional[str] = None, force_ocr: bool = False, timeo
     # Check if site is behind Cloudflare or if user wants to force OCR
     if force_ocr:
         logger.info("🔒 Using OCR method (force mode)")
-        result = _run_async(_screenshot_ocr(url, api_key, timeout))
+        result = _run_async(
+            _screenshot_ocr(url, api_key, timeout, headless, scroll_pause)
+        )
         logger.info("✅ Completed! (%d characters extracted)", len(result))
         return result
     
     cf_protected = behind_cloudflare(url)
     if cf_protected:
         logger.info("🛡️ Cloudflare detected - using OCR method")
-        result = _run_async(_screenshot_ocr(url, api_key, timeout))
+        result = _run_async(
+            _screenshot_ocr(url, api_key, timeout, headless, scroll_pause)
+        )
         logger.info("✅ Completed! (%d characters extracted)", len(result))
         return result
 
@@ -184,6 +198,8 @@ def peek(url: str, api_key: Optional[str] = None, force_ocr: bool = False, timeo
         return result
     except Exception as e:
         logger.info("⚡ Fast scraping failed - using OCR method")
-        result = _run_async(_screenshot_ocr(url, api_key, timeout))
+        result = _run_async(
+            _screenshot_ocr(url, api_key, timeout, headless, scroll_pause)
+        )
         logger.info("✅ Completed! (%d characters extracted)", len(result))
         return result
