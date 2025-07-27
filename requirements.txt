@@ -1,0 +1,6 @@
+# Core dependencies
+requests>=2.25.0
+langchain-community>=0.0.20
+playwright>=1.40.0
+google-generativeai>=0.3.0
+Pillow>=8.0.0
