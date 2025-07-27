@@ -28,6 +28,11 @@ A powerful Python utility that can scrape **any website**—even those protected
 
 ## 🚀 Installation
 
+### From PyPI (Recommended)
+```bash
+pip install cloudflare-peek
+```
+
 ### From GitHub
 ```bash
 # Install in development mode
